@@ -31,6 +31,9 @@ import (
 	clientset "k8s.io/sample-controller/pkg/client/clientset/versioned"
 	informers "k8s.io/sample-controller/pkg/client/informers/externalversions"
 	"k8s.io/sample-controller/pkg/signals"
+	"github.com/mitchellh/go-homedir"
+
+	"path/filepath"
 )
 
 var (
@@ -38,24 +41,37 @@ var (
 	kubeconfig string
 )
 
+// retrieve the Kubernetes config
+func getKubernetesConfig(masterURL string, kubeconfig string) (*rest.Config, error) {
+	if kubeconfig == "" {
+		// construct the path to resolve to `~/.kube/config`
+		userHomeDirectory, err := homedir.Dir()
+		if err == nil {
+			kubeconfig = filepath.Join(userHomeDirectory, ".kube/config")
+		}
+	}
+
+	// create the config from the path (from outside of the cluster)
+	config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	if err == nil {
+		return config, nil
+	}
+
+	// try to get the config from inside the cluster
+	config, _ = rest.InClusterConfig()
+
+	return config, err
+}
+
 func main() {
 	flag.Parse()
 
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := signals.SetupSignalHandler()
 
-	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
+	cfg, err := getKubernetesConfig(masterURL, kubeconfig)
 	if err != nil {
-		glog.Errorf("Error building kubeconfig: %s", err.Error())
-	}
-
-	if err != nil {
-		cfg, err = rest.InClusterConfig()
-	}
-
-	if err != nil {
-
-		glog.Fatalf("Error building kubeconfig: %s", err.Error())
+		glog.Fatalf("Error building kubernetes config: %s", err.Error())
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(cfg)
