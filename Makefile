@@ -53,7 +53,36 @@ run-outside-cluster: deploy-crd deploy-cr
 
 cleanup: undeploy-controller undeploy-cr undeploy-crd 
 	kubectl delete deployment example-foo --ignore-not-found=true
+
+#call "make cleanup" before running demo 
+demo-1: 
+	clear
+	kubectl get pods
+	kubectl apply -f artifacts/crd.yaml
+	kubectl apply -f artifacts/crd-validation.yaml
+	kubectl apply -f artifacts/controller.yaml
+	sleep 5
+	kubectl get pods
+	sleep 5 # so what happened
 	
+	clear
+	kubectl get pods
+	kubectl get deployments
+	kubectl apply -f artifacts/cr.yaml
+	sleep 5
+	kubectl get pods
+	kubectl get deployments
+	sleep 5 #so what happened
+
+	clear
+	kubectl get pods
+	kubectl get deployments
+	hack/delete-sample-foo-pods.sh
+	sleep 1
+	kubectl get pods
+	kubectl get deployments
+	sleep 5 #so what happened
+
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
