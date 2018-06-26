@@ -22,4 +22,4 @@ set -o pipefail
 SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..
 
 cd $SCRIPT_ROOT
-go build -o "sample-k8s-controller"
+go build

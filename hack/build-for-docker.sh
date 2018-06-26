@@ -22,4 +22,4 @@ set -o pipefail
 SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..
 
 cd $SCRIPT_ROOT
-GOARCH=amd64 GOOS=linux go build -o "sample-k8s-controller"
+GOARCH=amd64 GOOS=linux go build
