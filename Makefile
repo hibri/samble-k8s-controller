@@ -46,12 +46,13 @@ deploy-controller:
 undeploy-controller:
 	kubectl delete -f artifacts/controller.yaml --ignore-not-found=true
 
-run-in-cluster: deploy-crd deploy-cr deploy-controller
+run-inside-cluster: deploy-crd deploy-cr deploy-controller
 	
-run-in-process: deploy-crd deploy-cr
-	sample-k8s-controller
+run-outside-cluster: deploy-crd deploy-cr
+	sample-k8s-controller -logtostderr=true -v=2 -stderrthreshold=INFO
 
 cleanup: undeploy-controller undeploy-cr undeploy-crd 
+	kubectl delete deployment example-foo --ignore-not-found=true
 	
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

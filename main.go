@@ -58,9 +58,13 @@ func getKubernetesConfig(masterURL string, kubeconfig string) (*rest.Config, err
 	}
 
 	// try to get the config from inside the cluster
-	config, _ = rest.InClusterConfig()
+	config, err2 := rest.InClusterConfig()
+	if err2 != nil {
+		//Return original error as we are not inside a container running on the cluster
+		return config, err
+	}
 
-	return config, err
+	return config, nil
 }
 
 func main() {
