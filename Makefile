@@ -1,6 +1,6 @@
 .PHONY: all
 
-DOCKER_URL := docker.io/hibri/sample-k8s-controller
+DOCKER_URL := hibri/sample-k8s-controller
 TAG := latest
 
 print-%: ; @echo $*=$($*)
@@ -17,12 +17,42 @@ test:
 build: test
 	hack/build.sh
 
-package: build
+build-for-docker: test
+	hack/build-for-docker.sh
+
+package: build-for-docker
 	docker build -t "$(DOCKER_URL):$(TAG)" -f Dockerfile .
 
 publish: package
 	docker push "$(DOCKER_URL):$(TAG)"
 
+deploy-crd:
+	kubectl apply -f artifacts/crd.yaml
+	kubectl apply -f artifacts/crd-validation.yaml
+
+undeploy-crd:
+	kubectl delete -f artifacts/crd-validation.yaml --ignore-not-found=true
+	kubectl delete -f artifacts/crd.yaml --ignore-not-found=true
+	
+deploy-cr:
+	kubectl apply -f artifacts/cr.yaml
+
+undeploy-cr:
+	kubectl delete -f artifacts/cr.yaml --ignore-not-found=true
+
+deploy-controller:
+	kubectl apply -f artifacts/controller.yaml
+
+undeploy-controller:
+	kubectl delete -f artifacts/controller.yaml --ignore-not-found=true
+
+run-in-cluster: deploy-crd deploy-cr deploy-controller
+	
+run-in-process: deploy-crd deploy-cr
+	sample-k8s-controller
+
+cleanup: undeploy-controller undeploy-cr undeploy-crd 
+	
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
